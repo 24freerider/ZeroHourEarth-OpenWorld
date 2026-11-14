@@ -1,0 +1,4 @@
+[submodule "engine"]
+	path = engine
+	url = https://github.com/24freerider/GeneralsVanguard.git
+	branch = openworld-074
