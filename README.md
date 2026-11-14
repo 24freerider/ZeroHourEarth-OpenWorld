@@ -45,3 +45,8 @@ The base maps (`gamedata/Maps/WorldExploration*`) are generated and not in git. 
 - Terrain and map data: OpenStreetMap contributors (ODbL), VersaTiles, public DEM sources and GHS-POP; all are
   downloaded at play time.
 - No game files are included. Zero Hour is EA's; the engine is Generals Vanguard and its contributors (GPL-3.0).
+
+## License
+
+[GPL-3.0-or-later](LICENSE.md). The engine has its own license with EA's additional terms (`engine/LICENSE.md`),
+and `generator/` keeps its own.
