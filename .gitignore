@@ -1,0 +1,16 @@
+# The engine is its own repository (a fork of Generals Vanguard), added here as a submodule.
+# Everything below is built, downloaded or generated.
+game/
+cache/
+logs/
+dist/
+tools/vcpkg/
+gamedata/Maps/
+worldserver/config.json
+.venv/
+__pycache__/
+*.py[cod]
+*.zip
+
+# the patch series carries author headers; the engine fork has the full history
+port/patches/
