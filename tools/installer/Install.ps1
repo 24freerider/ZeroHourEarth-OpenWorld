@@ -18,7 +18,9 @@ param(
     [string]$VanguardDir = '',
     [string]$ZHDir = '',
     [switch]$NoShortcuts,
-    [switch]$SkipPython
+    [switch]$SkipPython,          # leave the world server's Python environment alone
+    [switch]$InstallPython,       # install Python 3.12 without asking when it is missing
+    [switch]$NoPythonInstall      # never install Python (only report that it is missing)
 )
 $ErrorActionPreference = 'Stop'
 $payload = Join-Path $PSScriptRoot 'payload'
@@ -132,22 +134,61 @@ else {
     # Native tools write warnings to stderr; under 'Stop' Windows PowerShell 5.1 turns those into terminating
     # errors. Here success is judged by $LASTEXITCODE alone.
     $ErrorActionPreference = 'Continue'
-    $py = $null
-    foreach ($cand in @(@('py', '-3'), @('python'), @('python3'))) {
-        $exe = Get-Command $cand[0] -ErrorAction SilentlyContinue
-        if (-not $exe -or $exe.Source -like '*WindowsApps*') { continue }   # the Store's stub only opens the Store
-        $args0 = @($cand | Select-Object -Skip 1)
-        # no quotes inside the code: Windows PowerShell 5.1 strips them when it passes arguments to a native exe
-        # (no Select-Object -First here: it stops the pipeline early and the exit code becomes -1)
-        $out = @(& $exe.Source @args0 -c 'import sys; print(sys.version_info[0]*100+sys.version_info[1])' 2>$null)
-        $code = $LASTEXITCODE
-        $v = if ($out.Count) { "$($out[0])".Trim() } else { '' }
-        if ($code -eq 0 -and $v -match '^\d+$' -and [int]$v -ge 310) { $py = @($exe.Source) + $args0; break }
+    function Find-Python {
+        # the PATH of this process may predate a Python installed a moment ago: take the current one from the registry
+        $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+        $cands = @(@('py', '-3'), @('python'), @('python3'))
+        foreach ($p in (Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe", "$env:ProgramFiles\Python3*\python.exe" -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending)) { $cands += ,@($p.FullName) }
+        foreach ($cand in $cands) {
+            $exe = Get-Command $cand[0] -ErrorAction SilentlyContinue
+            if (-not $exe -or $exe.Source -like '*WindowsApps*') { continue }   # the Store's stub only opens the Store
+            $args0 = @($cand | Select-Object -Skip 1)
+            # no quotes inside the code: Windows PowerShell 5.1 strips them when it passes arguments to a native exe
+            # (no Select-Object -First here: it stops the pipeline early and the exit code becomes -1)
+            $out = @(& $exe.Source @args0 -c 'import sys; print(sys.version_info[0]*100+sys.version_info[1])' 2>$null)
+            $code = $LASTEXITCODE
+            $v = if ($out.Count) { "$($out[0])".Trim() } else { '' }
+            if ($code -eq 0 -and $v -match '^\d+$' -and [int]$v -ge 310) { return ,(@($exe.Source) + $args0) }
+        }
+        return $null
+    }
+    $py = Find-Python
+    if (-not $py -and -not $NoPythonInstall) {
+        # Python for this user only: no administrator rights, nothing else on the computer changes.
+        Say '      Python 3.10+ is not installed. The world server needs it (about 30 MB, from python.org).' Yellow
+        $answer = 'y'
+        if (-not $InstallPython) {
+            try { $answer = Read-Host '      Install Python 3.12 now? [Y/n]' } catch { $answer = 'y' }
+        }
+        if ($answer -notmatch '^(n|no|nie)$') {
+            $winget = Get-Command winget -ErrorAction SilentlyContinue
+            if ($winget) {
+                Say '      installing Python 3.12 with winget ...'
+                & $winget.Source install -e --id Python.Python.3.12 --scope user --silent --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Host
+                $py = Find-Python
+            }
+            if (-not $py) {
+                $url = 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe'
+                $setup = Join-Path $env:TEMP 'python-3.12.10-amd64.exe'
+                Say "      downloading $url ..."
+                try {
+                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                    Invoke-WebRequest -Uri $url -OutFile $setup -UseBasicParsing
+                    Say '      installing Python 3.12 (for this user, about a minute) ...'
+                    $p = Start-Process $setup -ArgumentList '/quiet', 'InstallAllUsers=0', 'PrependPath=1', 'Include_launcher=1', 'Include_test=0' -Wait -PassThru
+                    if ($p.ExitCode -ne 0) { Say "      the Python installer ended with code $($p.ExitCode)" Yellow }
+                } catch { Say "      download failed: $($_.Exception.Message)" Yellow }
+                Remove-Item $setup -ErrorAction SilentlyContinue
+                $py = Find-Python
+            }
+        }
     }
     if (-not $py) {
-        Say '      Python 3.10+ was not found. Install it (python.org, or: winget install Python.Python.3.12)' Yellow
+        Say '      Python 3.10+ is still missing. Install it (python.org, or: winget install Python.Python.3.12)' Yellow
         Say '      and run this installer again - the game runs, but World Exploration needs the world server.' Yellow
     } else {
+        Say ("      Python: {0}" -f ($py -join ' ')) DarkGray
         if (-not (Test-Path $venvPy)) {
             $pyExe = $py[0]; $pyArgs = @($py | Select-Object -Skip 1)
             & $pyExe @pyArgs -m venv (Join-Path $InstallDir 'worldserver\.venv')

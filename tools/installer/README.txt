@@ -9,8 +9,8 @@ Potrebuješ:
   1. Command & Conquer Generals Zero Hour (Steam, EA app alebo CD).
   2. Generals Vanguard (GeneralsX), nainštalovaný jeho vlastným inštalátorom.
      Najlepšie vo verzii, na ktorej je tento balík postavený (pozri VERSION.txt).
-  3. Python 3.10 alebo novší (python.org, alebo: winget install Python.Python.3.12).
-     Bez Pythonu hra beží, ale World Exploration nie, lebo ho potrebuje svetový server.
+  3. Python 3.10 alebo novší pre svetový server. Ak ho počítač nemá, inštalátor sa opýta a nainštaluje
+     Python 3.12 sám (len pre tvojho používateľa, bez administrátora; cez winget alebo z python.org).
   4. Internet pri prvej inštalácii (pip) a pri hraní (výškové dáta a mapy sveta sa sťahujú a ukladajú do cache).
   5. Asi 2,5 GB voľného miesta.
 
@@ -31,7 +31,8 @@ Odinštalovanie: spusti Uninstall.ps1 v priečinku modu (alebo priečinok jednod
 ENGLISH
 -------
 Needs: Zero Hour (Steam / EA app / CD), Generals Vanguard (GeneralsX) installed with its own installer,
-Python 3.10+ for the world server, the internet (pip; terrain and map data are downloaded and cached), ~2.5 GB.
+the internet (pip; terrain and map data are downloaded and cached), ~2.5 GB. Python 3.10+ for the world server:
+if it is missing, the installer offers to install Python 3.12 for the current user (winget, or python.org).
 
 Install: unpack, double-click Install.cmd. It finds Vanguard and Zero Hour itself (or pass -VanguardDir / -ZHDir).
 It creates "Zero Hour Earth - Open World" on the desktop: a full copy of Vanguard with the mod on top

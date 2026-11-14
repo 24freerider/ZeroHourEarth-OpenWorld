@@ -13,7 +13,7 @@ coming out of the houses, and a nuke that leaves a real crater.
 You need:
 - Zero Hour (Steam, EA app or CD);
 - **Generals Vanguard**, installed with its own installer;
-- **Python 3.10+**;
+- Python 3.10+ (if it is missing, the installer offers to install Python 3.12 for you);
 - about 2.5 GB of free space.
 
 1. Download `ZeroHourEarth-OpenWorld-….zip` from [Releases](../../releases) and unpack it.
