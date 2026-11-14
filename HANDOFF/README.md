@@ -25,6 +25,16 @@ Modes:
 - **Humvee**: drive one vehicle, with arrow-key driving like a car game. A **zombie survival** run can be added, with
   a horde from houses, money per kill, a shop on the Humvee, and a nuke that leaves a real crater.
 
+## On GitHub
+
+- Mod: https://github.com/24freerider/ZeroHourEarth-OpenWorld (`main`, the engine as the `engine` submodule;
+  installer zips under Releases, e.g. `v0.1.0-vanguard0.9.74`).
+- Engine: https://github.com/24freerider/GeneralsVanguard, a fork of wh1ter0se69/GeneralsVanguard. Branches
+  `openworld-074` (current) and `openworld` (v0.9.72). In `engine\` the remote is `fork`; `origin` is upstream.
+- Pushing: `git push` with the git from GitHub Desktop (Git Credential Manager holds the sign-in). A new release:
+  `tools\build-installer.ps1`, then tag the mod repo (`vX.Y.Z-vanguard0.9.NN`), push the tag, and draft the release
+  on GitHub with the zip attached.
+
 ## Layout (project root `C:\Users\yamak\Desktop\ZeroHourEarth-OpenWorld`)
 
 | Folder | What | In git? |
