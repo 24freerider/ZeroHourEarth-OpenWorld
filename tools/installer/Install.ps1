@@ -129,13 +129,20 @@ Say '[3/5] Python for the world server ...' Cyan
 $venvPy = Join-Path $InstallDir 'worldserver\.venv\Scripts\python.exe'
 if ($SkipPython) { Say '      skipped (-SkipPython)' DarkGray }
 else {
+    # Native tools write warnings to stderr; under 'Stop' Windows PowerShell 5.1 turns those into terminating
+    # errors. Here success is judged by $LASTEXITCODE alone.
+    $ErrorActionPreference = 'Continue'
     $py = $null
     foreach ($cand in @(@('py', '-3'), @('python'), @('python3'))) {
         $exe = Get-Command $cand[0] -ErrorAction SilentlyContinue
         if (-not $exe -or $exe.Source -like '*WindowsApps*') { continue }   # the Store's stub only opens the Store
         $args0 = @($cand | Select-Object -Skip 1)
-        $v = & $exe.Source @args0 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>$null
-        if ($LASTEXITCODE -eq 0 -and $v -and [version]$v -ge [version]'3.10') { $py = @($exe.Source) + $args0; break }
+        # no quotes inside the code: Windows PowerShell 5.1 strips them when it passes arguments to a native exe
+        # (no Select-Object -First here: it stops the pipeline early and the exit code becomes -1)
+        $out = @(& $exe.Source @args0 -c 'import sys; print(sys.version_info[0]*100+sys.version_info[1])' 2>$null)
+        $code = $LASTEXITCODE
+        $v = if ($out.Count) { "$($out[0])".Trim() } else { '' }
+        if ($code -eq 0 -and $v -match '^\d+$' -and [int]$v -ge 310) { $py = @($exe.Source) + $args0; break }
     }
     if (-not $py) {
         Say '      Python 3.10+ was not found. Install it (python.org, or: winget install Python.Python.3.12)' Yellow
@@ -150,6 +157,7 @@ else {
         & $venvPy -m pip install --disable-pip-version-check -q -r (Join-Path $InstallDir 'worldserver\requirements.txt')
         if ($LASTEXITCODE -ne 0) { Fail 'pip install failed (is the internet reachable?)' }
     }
+    $ErrorActionPreference = 'Stop'
 }
 
 # --- Shortcuts --------------------------------------------------------------------------------------------
